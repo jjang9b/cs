@@ -283,7 +283,7 @@ class DbKit_Mysql extends Dbkit
     $aResult = array();
 
     $query = "SELECT a.column_name, a.column_default, a.is_nullable, a.data_type, a.character_maximum_length AS max_len,
-                IF( b.column_name IS NOT NULL, 'Y', 'N' ) AS is_primary
+                IF( b.column_name IS NOT NULL, 'Y', 'N' ) AS is_primary, a.column_comment
               FROM information_schema.columns AS a
               LEFT JOIN information_schema.key_column_usage AS b ON a.column_name = b.column_name
               AND a.table_name = b.table_name AND b.CONSTRAINT_SCHEMA = '%s'
@@ -292,15 +292,7 @@ class DbKit_Mysql extends Dbkit
     $this->debug->console(array('getColumnList_query'=>sprintf($query,$this->db->database, $sTableName, $this->db->database), 'getColumnList_param'=>''));
 
     if($cur = $this->db->query(sprintf($query,$this->db->database, $sTableName, $this->db->database)))
-    {
-      $aRows = $cur->result();
-
-      if(!empty($aRows))
-      {
-        foreach ($aRows as $aCurRow)
-          $aResult[] = $aCurRow;
-      }
-    } 
+      $aResult = $cur->result();
     else 
       $this->_setError(__METHOD__. ' : '.sprintf($query, $sTableName));
 

@@ -49,7 +49,9 @@
       html += '</td>';
 
       html += '<td>'+aData[k].column_name+'</td>';
-      html += '<td><input type="text" class="form-control" name="columnText['+ type +']['+aData[k].column_name+']" value="'+aData[k].column_name+'"></td>';
+      html += '<td><input type="text" class="form-control" name="columnText['+ type +']['+aData[k].column_name+']"' + 
+        'value="'+ ( aData[k].column_comment != '' ? aData[k].column_comment : aData[k].column_name ) +'"></td>';
+
       html += '<td>'+aData[k].column_default+'</td>';
       html += '<td>'+aData[k].is_nullable+'</td>';
       html += '<td>'+aData[k].data_type+'</td>';

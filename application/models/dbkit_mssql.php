@@ -262,52 +262,30 @@ class DbKit_Mssql extends DbKit
     $this->load->database( $sDSN, false, true );
 
     $aResult = array();
-    $query = "SELECT column_name
-              FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-              WHERE OBJECTPROPERTY(OBJECT_ID(constraint_name), 'IsPrimaryKey') = 1
-                    AND table_name = ?";
     $aParam = array($sTableName);
-    $sPrimaryColumn = '';
 
-    if ($cursor = $this->db->query($query, $aParam, true, ''))
-    {
-      $aRows = $cursor->result('array');
-      if (!is_null($aRows[0]))
-        $sPrimaryColumn = $aRows[0]['column_name'];
-    }
+    $query = "SELECT 
+                A.column_name, 
+                A.column_default,
+                CASE WHEN A.is_nullable = 'YES' THEN 'Y' ELSE 'N' END AS is_nullable,
+                A.data_type,
+                A.CHARACTER_MAXIMUM_LENGTH as max_len,
+                CASE WHEN OBJECTPROPERTY(OBJECT_ID(B.constraint_name), 'IsPrimaryKey') = 1 THEN 'Y' ELSE 'N' END AS is_primary,
+                C.value AS column_comment
+              FROM [INFORMATION_SCHEMA].[COLUMNS] A
+              LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE B ON A.TABLE_NAME = B.TABLE_NAME AND A.COLUMN_NAME = B.COLUMN_NAME
+              LEFT JOIN sys.extended_properties C ON OBJECT_ID(A.TABLE_NAME) = C.major_id AND COLUMNPROPERTY(C.major_id, A.COLUMN_NAME, 'ColumnId') = C.minor_id
+              WHERE A.table_name = ?";
+
+    $this->debug->console(array('getColumnList_query'=>sprintf($query,$this->db->database, $sTableName, $this->db->database), 'getColumnList_param'=>''));
+
+    if($cur = $this->db->query(sprintf($query, $sTableName)))
+      $aResult = $cursor->result();
     else
-    {
       $this->_setError(__METHOD__);
-      return $aResult;
-    }
 
-    $query = "SELECT column_name, column_default, is_nullable, data_type, CHARACTER_MAXIMUM_LENGTH as max_len 
-              FROM [".$this->db->database."].[INFORMATION_SCHEMA].[COLUMNS] 
-              WHERE TABLE_NAME = ?";
-
-    if ($cursor = $this->db->query($query, $aParam, true, ''))
-    {
-      $aRows = $cursor->result('object'); // 
-
-      foreach ($aRows as $oCurRow)
-      {
-        if (strtoupper($oCurRow->is_nullable) == 'NO')
-          $oCurRow->is_nullable = 'N';
-        else
-          $oCurRow->is_nullable = 'Y';
-
-        if ($oCurRow->column_name == $sPrimaryColumn)
-          $oCurRow->is_primary = 'Y';
-        else
-          $oCurRow->is_primary = 'N';
-
-        $aResult[] = $oCurRow;
-      }
-    }
-    else
-    {
-      $this->_setError(__METHOD__);
-    }
+    $cur->free_result();
+    $this->db->close();
 
     return $aResult;
   }
