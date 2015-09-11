@@ -1,0 +1,20 @@
+#d_order .form-group input{ width:300px; }
+#t_datatable th, #t_datatable td{ word-wrap:break-word;min-width:30px;max-width:150px; }
+
+.content{ margin:0 0 0 0.5em; }
+.i_game_logo{background-color:#001f3f; width:100%;}
+.treeview a{ color:#666 !important; }
+.treeview .menus{ margin:0.3em 0 0 0 !important; }
+
+.c_title {position:relative;float:left;margin:1em 0 1em 1em; }
+.bg-white{ background-color:white !important;color:black !important; border:1px solid !important; }
+.bg-gray{ background-color:#4C4C4C !important;color:#fff !important; }
+.text-gray{ color:#666 !important; }
+.text-black{ color:black !important; }
+.text-white{ color:white !important; }
+
+.fl-left{ position:relative;float:left; margin:0em 0 0 0; }
+
+.nav-tabs-custom > .nav-tabs > li a{ color: #aaa !important; }
+.nav-tabs-custom > .nav-tabs > li.active a{ color: black !important; }
+.nav-tabs-custom > .nav-tabs > li.active { border-top-color: #4C4C4C !important; }
