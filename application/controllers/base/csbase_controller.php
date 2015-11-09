@@ -6,41 +6,31 @@ class CsBase_Controller extends Base_Controller // CI_Controller
   {
     parent::__construct();
 
+    $this->sCookieId = 'cstool_session_qwerty_123_id';
     $this->load->helper('url');
     $sUrl = uri_string();
     $this->url = explode('/', $sUrl);
-    $this->load->library('ftt/util/server');
-    $this->load->library('ftt/auth');
 
-    /* Auth 2.0 */
-    $this->sDebugConsole = $this->config->item('debug_console');
+    $this->load->model('base/csbase_dao');
+    $this->load->config('config');
 
     $this->aViewData = array(
-      'ssn' => $this->ssn,
       'url'=>$this->url,
-      'isDev'=>$this->server->isDev(),
-      'sGnbUrl'=>ftt_get_config('auth', 'auth', false)['gnb_url'],
+      'isDev'=>(ENVIRONMENT == 'development') ? true : false,
       'sViewMaxCount'=>1000
     );
 
-    $this->oAuth = get_admin_auth();
-    $oAdminInfo = $this->getAdminUserInfo();
-    $this->nAdminUsn = $oAdminInfo->usn;
+    if($this->url[0] && $this->url[0] != 'main')
+    {
+      $this->load->helper('cookie');
 
-    if($this->url[0]){
       $this->_setSSN();
-      $this->load->model('base/csbase_dao');
       $this->load->library('ftt/util/debug');
-      $this->load->config('config');
-
-      $this->config->load($this->url[ 0 ].'/menu', false, false);
-      $this->aViewData['aMenuList'] = $this->config->item('menu');
+      $this->sDebugConsole = true;
+      $this->aViewData['aMenuList'] = ftt_get_config('menu', $this->url[ 0 ].'/menu');
       $this->aViewData['sDebugConsole'] = $this->sDebugConsole;
 
-    } else {
-
-      $this->aViewData['aAuthMenuList'] = self::getMenuList();
-      $this->aViewData['aAuthMenuIdx'] = ftt_get_config('csIdx', 'auth', false);
+      self::checkSetAuth();
     }
   }
 
@@ -222,9 +212,7 @@ class CsBase_Controller extends Base_Controller // CI_Controller
   public function writeAccessLog($sAccountIdx, $sMenuName, $sTableName, $sColumn, $sBeforeVal, $sAfterVal, $sInputVal, $sGmUsn, $sEditReason)
   {
     $sIsAccessLog = $this->config->item('accessLog');
-
-    $aTableInfo[ 'dsn' ] = 'pubdb';
-    $aTableInfo[ 'table' ] = 'cstool_access_log';
+    $aTableInfo = ftt_get_config('t_cs_access_log', 'auth');
 
     if($sIsAccessLog)
     {
@@ -256,67 +244,60 @@ class CsBase_Controller extends Base_Controller // CI_Controller
     return $this->load->view($sViewPath, $this->aViewData, true);
   }
 
-  /* Auth2 함수 */
+  /* Simple Auth 함수 */
   //{{{
-  protected function getMenuList()
+  public function checkSetAuth()
   {
-    return $this->oAuth->getMenuList();
-  }
+    $this->oGmInfo = json_decode(get_cookie($this->sCookieId));
+    $aAuthMaster = ftt_get_config('auth_master', 'auth');
 
-  protected function getAllowType($sUrl=null, $nSsn=-1)
-  {
-    if ($sUrl == null) $sUrl = $_SERVER['PATH_INFO'];
-    if ($nSsn < 0) $nSsn = $_GET['_ssn'];
+    $this->nAdminUsn = $this->oGmInfo->idx;
 
-    $this->sUserAllowType = $this->oAuth->getAllowType($sUrl, $nSsn);
-    
-    return $this->sUserAllowType;
-  }
+    if(!$this->oGmInfo) self::goWarning(1);
+    if($aAuthMaster[$this->oGmInfo->auth_id] == $this->oGmInfo->auth_password) return true;
+    if($this->oGmInfo->auth_priv == 'A' || $this->oGmInfo->auth_priv == 'W') $this->aViewData['sIsWrite'] = true;
+    if($this->oGmInfo->auth_priv == 'A') return true;
+    if($this->oGmInfo->auth_status == 'D') self::goWarning(3);
 
-  protected function checkPermission($sChkAllowType, $sUrl=null, $nSsn=-1)
-  {
-    $sUserAllowType = $this->getAllowType($sUrl, $nSsn);
+    $this->aGmMenu = explode('|', $this->oGmInfo->access_menu);
+    $sIsAccess = false;
 
-    if ($sUserAllowType == 'write' && in_array($sChkAllowType, array('read', 'write'))) return true;
-    if ($sUserAllowType == 'read' && in_array($sChkAllowType, array('read'))) return true;
-      
-    return false;
-  }
-
-  protected function getAdminUserInfo()
-  {
-    return $this->oAuth->getUserInfo();
-  }
-
-  protected function dieIfDenied($sChkAllowType, $sUrl=null, $nSsn=-1)
-  {
-    if ($this->oAuth->existsToken())
+    foreach($this->aGmMenu as $sAccessMenu)
     {
-      $sUserAllowType = $this->getAllowType($sUrl, $nSsn);
-
-      if ($sUserAllowType == 'write' && in_array($sChkAllowType, array('read', 'write')))
-      { 
-        $this->isLogin = true;
-        return true;
-      }
-      if ($sUserAllowType == 'read' && in_array($sChkAllowType, array('read')))
-      {
-        $this->isLogin = true;
-        return true;
-      }
-
-      $this->isLogin = false;
-
-      if ($sUserAllowType == 'login')
-        $this->layout_view('system/login', $this->aViewData);
-      else
-        $this->layout_view('system/deny', $this->aViewData);
-    }
-    else
-    {
-      $this->layout_view('system/login', $this->aViewData);
+      if($this->url[1] == $sAccessMenu)
+        $sIsAccess = true;
     }
 
+    if(!$sIsAccess) self::goWarning(2);
+  }
+
+  public function goLogin()
+  {
+    $aParam = $this->input->post();
+
+    $aMainTable = current(ftt_get_config('main', 'auth'));
+    $aAuthMaster = ftt_get_config('auth_master', 'auth');
+
+    if($aAuthMaster[$aParam['pGmId']] == $aParam['pGmPassword'])
+    {
+      echo $this->echoJson(
+          array(
+            'auth_id'=>$aParam['pGmId'], 
+            'auth_password'=>$aParam['pGmPassword'],
+            'auth_priv'=>'A'));
+    }
+
+    $aSearchValue = array($aParam['pGmId'], md5($aParam['pGmPassword']));
+
+    $aResultData = $this->csbase_dao->getListOne($aMainTable, $aSearchValue, array(' = ? ', ' = ? '));
+
+    echo $this->echoJson($aResultData);
+  }
+
+  public function goWarning($nMsgType)
+  {
+    $this->aViewData['nMsgType'] = $nMsgType;
+    $this->layout_view('system/warning', $this->aViewData);
     $this->output->_display();
     die;
   }

@@ -7,7 +7,7 @@ if($aData)
 <div class="box-body">
   <form name="f_edit">
   <div class="table-responsive">
-  <table id="t_datatable" class="table table-bordered">
+  <table name="t_datatable" class="table table-bordered">
     <thead>
     <tr>
 <?php
@@ -47,7 +47,7 @@ if($aData)
     {
 ?>
       <td name="tdSelect" data-primary_string="<?=$sColumn?>|<?=$sValue?>">
-        <h5><span class="text-navy"><?= $sValue ?></span></h5>
+        <h5><span class="text-black"><?= $sValue ?></span></h5>
 <?php
       if($aTableInfo[ 'editColumn' ][ $sColumn ])
       {

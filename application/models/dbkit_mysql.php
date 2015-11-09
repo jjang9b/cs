@@ -54,7 +54,6 @@ class DbKit_Mysql extends Dbkit
     if (!is_array($mWhereColumn))
       $mWhereColumn = array($mWhereColumn);
 
-
     for ($i=0, $j=count($mWhereColumn); $i<$j; $i++)
     {
       $aTmp[] = $mWhereColumn[ $i ].$aWhereType[ $i ];
@@ -158,6 +157,59 @@ class DbKit_Mysql extends Dbkit
     return $sAffectRows;
   }
 
+  public function setUpdateArray($sDSN, $sTableName, $aUpdateArray, $aWhereType, $mWhereColumn, $mWhereVal)
+  {
+    (strpos($sDSN, '_slave') || strpos($sDSN, '_master')) ? 
+      $this->load->database($sDSN) : $this->load->database($sDSN.'_master');
+
+    $sAffectRows = 0;
+    $sQueryVal = '';
+    $sWhereVal = '';
+    $sParamType = '';
+    $aParam = array();
+
+    if (!is_array($mWhereColumn))
+      $mWhereColumn = array($mWhereColumn);
+
+    foreach($aUpdateArray as $sUpdateColumn=>$sUpdateVal)
+    {
+      $sQueryVal .= $sUpdateColumn.' = ?, ';
+      $aParam[] = $sUpdateVal;
+
+      if(gettype($sUpdateVal) == 'string')
+        $sParamType .= 's';
+      else
+        $sParamType .= 'i';
+    }
+
+    for ($i=0, $j=count($mWhereColumn); $i<$j; $i++)
+    {
+      $sWhereVal .= $mWhereColumn[ $i ].$aWhereType[ $i ];
+    }
+
+    $aParam[] = $mWhereVal;
+
+    if(gettype($mWhereVal) == 'string')
+      $sParamType .= 's';
+    else
+      $sParamType .= 'i';
+
+    $sQueryVal = substr(trim($sQueryVal), 0, -1);
+
+    $query = 'UPDATE  %s SET %s WHERE %s';
+
+    $this->debug->console(array('update_array_query'=>sprintf($query, $sTableName, $sQueryVal, $sWhereVal), 'update_array_param'=>$aParam));
+
+    if($this->db->query(sprintf($query, $sTableName, $sQueryVal, $sWhereVal), $aParam, true, $sParamType))
+      $sAffectRows = $this->db->affected_rows();
+    else
+      $this->_setError(__METHOD__. ' : '.$query);
+
+    $this->db->close();
+
+    return $sAffectRows;
+  }
+
   public function setInsert($sDSN, $sTableName, $mInsertColumn, $mInsertVal)
   {
     (strpos($sDSN, '_slave') || strpos($sDSN, '_master')) ? 
@@ -197,17 +249,20 @@ class DbKit_Mysql extends Dbkit
 
     $this->debug->console(array('insert_query'=>sprintf($query, $sTableName, $sQueryColumn, $sQueryVal), 'insert_param'=>$aParam));
 
-    if($this->db->query(sprintf($query, $sTableName, $sQueryColumn, $sQueryVal), $aParam, true, $sParamType))
-      $sAffectRows = $this->db->affected_rows();
-    else
-      $this->_setError(__METHOD__. ' : '.$query);
+    try{
+      $this->db->query(sprintf($query, $sTableName, $sQueryColumn, $sQueryVal), $aParam, true, $sParamType);
+      $sAffectRows = $this->db->insert_id();
+
+    } catch(Exception $e){ 
+      $sAffectRows = -1;
+    }
 
     $this->db->close();
 
     return $sAffectRows;
   }
 
-  public function callProcedure($sDSN, $sProcedureName, $aParam)
+  public function callProcedure($sDSN, $sProcedureName, $aInputParam, $aOutputParam)
   {
     (strpos($sDSN, '_slave') || strpos($sDSN, '_master')) ? 
       $this->load->database($sDSN) : $this->load->database($sDSN.'_master');
@@ -216,7 +271,7 @@ class DbKit_Mysql extends Dbkit
     $aTmp = array();
     $aValTmp = array();
 
-    foreach($aParam as $mParamVal)
+    foreach($aInputParam as $mParamVal)
     {
       if( gettype($mParamVal) == 'string' )
         $aTmp[] = 's';
@@ -229,19 +284,43 @@ class DbKit_Mysql extends Dbkit
     $sParamType = implode('', $aTmp);
     $sBindVal = implode(', ', $aValTmp);
 
-    $query = "CALL %s( %s )";
+    if($aOutputParam)
+    {
+      foreach($aOutputParam as $sAsName=>$sOutVal)
+        $sOutBindAsVal .= "$sOutVal as $sAsName,";
 
-    $this->debug->console(array('call_query'=>sprintf($query, $sProcedureName, $sBindVal), 'call_param'=>$aParam));
+      $sOutBindVal = implode(', ', $aOutputParam);
+      $sOutBindAsVal = substr($sOutBindAsVal, 0, -1);
 
-    if ($cur = $this->db->query(sprintf($query, $sProcedureName, $sBindVal), $aParam, true, $sParamType))
-      $aRow = $cur->row_array();
+      $query = "CALL %s( %s, %s)";
+      $sSprintQuery = sprintf($query, $sProcedureName, $sBindVal, $sOutBindVal);
+
+    } else {
+
+      $query = "CALL %s( %s )";
+      $sSprintQuery = sprintf($query, $sProcedureName, $sBindVal);
+    }
+
+    $this->debug->console(array('call_query'=>sprintf($query, $sProcedureName, $sBindVal, $sOutBindVal), 'call_param'=>$aInputParam));
+
+    if($cur = $this->db->query($sSprintQuery, $aInputParam, true, $sParamType))
+    {
+      if((int)$cur->num_rows() >= 1)
+        $aInputResult = $cur->result();
+    }
     else
       $this->_setError(__METHOD__. ' : '.$query);
 
-    $cur->free_result();
+    $curOut = $this->db->query(sprintf("SELECT %s", $sOutBindAsVal));
+    $aOutResult = $curOut->result();
+
+    $aResult['input'] = $aInputResult;
+    $aResult['output'] = $aOutResult;
+
+    $curOut->free_result();
     $this->db->close();
 
-    return $aRow;
+    return $aResult;
   }
 
   public function getTableList($sDSN)

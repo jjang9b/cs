@@ -47,8 +47,16 @@ class CsBase_dao extends CI_Model
     return $oDao->setUpdate($aTableInfo['dsn'], $aTableInfo['table'], $sEditColumnType, $sEditColumnName, $sEditColumnValue, $aWhereType, $aPrimaryColumn, $aPrimaryValue);
   }
 
+  public function setUpdateArray($aTableInfo, $aUpdateArray, $aWhereType, $mWhereColumn, $mWhereVal)
+  {
+    $oDao = $this->dbkit->getInstance($aTableInfo['dsn']);
+
+    return $oDao->setUpdateArray($aTableInfo['dsn'], $aTableInfo['table'], $aUpdateArray, $aWhereType, $mWhereColumn, $mWhereVal);
+  }
+
   public function setInsert($aTableInfo, $mInsertColumn, $mInsertVal)
   {
+
     $oDao = $this->dbkit->getInstance($aTableInfo['dsn']);
 
     return $oDao->setInsert($aTableInfo['dsn'], $aTableInfo['table'], $mInsertColumn, $mInsertVal);
@@ -68,10 +76,10 @@ class CsBase_dao extends CI_Model
     return $oDao->getPrimaryList($sDSN, $sTableName);
   }
 
-  public function callProcedure($sDSN, $sProcedureName, $aParam)
+  public function callProcedure($sDSN, $sProcedureName, $aInputParam, $aOutputParam=null)
   {
     $oDao = $this->dbkit->getInstance($sDSN);
 
-    return $oDao->callProcedure($sDSN, $sProcedureName, $aParam);
+    return $oDao->callProcedure($sDSN, $sProcedureName, $aInputParam, $aOutputParam);
   }
 }

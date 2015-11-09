@@ -87,10 +87,10 @@ else
       <h4 class="modal-title"><small>유저 제재 / 해제</small></h4>
       </div>
       <div class="modal-body">
-        <small><b class="text-navy"><span id="txtPostModal">유저 제재/해제 중입니다.</span></b></small>
+        <span id="txtPostModal"class="text-navy">유저 제재/해제 중입니다.</span>
       </div>
       <div class="modal-footer">
-        <a href="javascript:void(0)" data-dismiss="modal" class="btn">Close</a>
+        <a href="javascript:void(0)" data-dismiss="modal" class="btn bg-white">닫기</a>
       </div>
     </div>
   </div>

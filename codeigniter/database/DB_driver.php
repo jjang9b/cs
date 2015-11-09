@@ -95,6 +95,21 @@ class CI_DB_driver {
         $this->org_hostname_port['hostname'] = $params['hostname'];
       if (isset($params['port']))
         $this->org_hostname_port['port'] = $params['port'];
+
+      if (isset($params['ikey']))
+      {
+        $db_account_loader = ftt_get_instance('ftt/DBAccountLoader'); 
+        $db_account = $db_account_loader->load($params['ikey']);
+        if ($db_account == null)
+        {
+          log_message('error', "invalid ikey ('{$params['ikey']}')");
+        }
+        else
+        {
+          $this->username = $db_account->id;
+          $this->password = $db_account->pw;
+        }
+      }
 		}
 
 		log_message('debug', 'Database Driver Class Initialized');

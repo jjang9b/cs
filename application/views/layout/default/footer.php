@@ -1,5 +1,3 @@
-    
-    <div style="height:200px"></div>
     </section>
   </aside>
   </div>

@@ -74,7 +74,7 @@ class Order extends CsBase_Controller
     $aParam = $this->input->post();
 
     /* 주문등록 처리 구현 */
-    $aJsonResult = array('result_code'=>1, 'result_msg'=>'success'); 
+    $aJsonResult = array('code'=>0, 'message'=>'success'); 
 
     echo json_encode($aJsonResult);
   }

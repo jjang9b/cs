@@ -8,7 +8,7 @@ class AccessLog extends CsBase_Controller
   {
     parent::__construct();
 
-    $this->config->load($this->url[ 0 ].'/accessLog', false, false);
+    $this->config->load($this->url[ 0 ].'/accesslog', false, false);
     $this->sMenuName = $this->config->item('menuName');
     $this->aWhereType = array(' = ? ', ' = ? ', ' BETWEEN ? AND ? ');
     $this->sListAllType = 'where';

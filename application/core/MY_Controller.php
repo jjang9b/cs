@@ -7,14 +7,15 @@ class Base_Controller extends CI_Controller
 		parent::__construct();
 	}
 
-	public function response_json($oData)
+	public function echoJson($oData)
 	{
+    ob_clean();
     header("Cache-Control: no-cache, no-store, must-revalidate");
     header("Pragma: no-cache");
-    header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 	  header('Content-type: application/json');
-	  echo json_encode($oData);
+    echo json_encode($oData, JSON_UNESCAPED_UNICODE);
     flush();
+    die;
 	}
 
   public function layout_view($sViewName, $aViewData='', $sLayoutName='')

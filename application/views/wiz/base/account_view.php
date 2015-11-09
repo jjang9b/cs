@@ -127,7 +127,7 @@ if($nMainDataCount > 0)
 </div>
 <br />
 <?php } ?>
-<?php if($nTabDataCount > 0){ ?>
+<?php if($aTabInfo){ ?>
 <div class="row">
   <div class="col-md-12">
     <div class="nav-tabs-custom">
@@ -156,7 +156,7 @@ if($nMainDataCount > 0)
         $i++;
       }
       ?>
-        <li><a name="a_tab_log" data-table='<?= $sLogLinkTable ?>'><small><b>Log 전체 조회</small></b></a></li>
+        <li class="bg-navy"><a name="a_tab_log" data-table='<?= $sLogLinkTable ?>'><small><b class="text-yellow">Log 전체 조회</small></b></a></li>
       </ul>
 
       <div class="tab-content">
@@ -169,9 +169,5 @@ if($nMainDataCount > 0)
     </div>
   </div>
 </div>
-<?php
-} else {
-?>
-  <p><h5><b class="text-danger">Tab 데이터가 없습니다.</b></h5></p>
 <?php } ?>
 <input type="hidden" id="i_isaccount" value="true" />

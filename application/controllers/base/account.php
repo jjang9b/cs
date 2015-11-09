@@ -8,10 +8,6 @@ class Account extends CsBase_Controller
   {
     parent::__construct();
 
-    /* Auth */
-    $this->aViewData['sIsWrite'] = true;
-    $this->nAdminUsn = 9999;
-
     $this->config->load($this->url[ 0 ].'/account', false, false);
     $this->sMenuName = $this->config->item('menuName');
     $this->aWhereType = array(' = ? ', ' = ? ');
@@ -121,7 +117,7 @@ class Account extends CsBase_Controller
     $aParam = $this->input->post();
 
     /* 유저 정보 수정 구현 */
-    $aJsonResult = array('result_code'=>1, 'result_msg'=>'success');
+    $aJsonResult = array('code'=>0, 'message'=>'success');
 
     echo json_encode($aJsonResult);
   }
@@ -131,7 +127,7 @@ class Account extends CsBase_Controller
     $aParam = $this->input->post();
 
     /* 유저 정보 수정 구현 */
-    $aJsonResult = array('result_code'=>1, 'result_msg'=>'success');
+    $aJsonResult = array('code'=>0, 'message'=>'success');
 
     echo json_encode($aJsonResult);
   }

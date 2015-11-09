@@ -111,6 +111,9 @@ class DbKit extends CI_Model
   public function setUpdate($sDSN, $sTableName, $sEditColumnName, $sEditColumnValue, $aWhereType, $mWhereColumn, $mWhereVal)
   {}
 
+  public function setUpdateArray($sDSN, $sTableName, $aUpdateArray, $aWhereType, $mWhereColumn, $mWhereVal)
+  {}
+
   public function setInsert($sDSN, $sTableName, $mInsertColumn, $mInsertVal)
   {}
 
@@ -123,6 +126,6 @@ class DbKit extends CI_Model
   public function getPrimaryList($sDSN, $sTableName)
   {}
 
-  public function callProcedure($sDSN, $sProcedureName, $aParam)
+  public function callProcedure($sDSN, $sProcedureName, $aInputParam, $aOutputParam=null)
   {}
 }

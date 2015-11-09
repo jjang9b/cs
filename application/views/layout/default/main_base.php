@@ -4,22 +4,44 @@
   </section>
 
   <section class="content">
+<?php
+$i = 0;
+foreach($aMainSsnList as $sSsn)
+{
+  if($aAuthMenuIdx[$sSsn]){
+    if($aAuthMenuList->{$aAuthMenuIdx[ $sSsn ]})
+    {
+      if($i % 3 == 0){
+?>
+    <div class="col-md-4" style="clear:both !important">
+<?php } else { ?>
     <div class="col-md-4">
+<?php } ?>
       <div class="box box-solid">
         <div class="box-header">
-          <img src="/res/img/common/banner/48.jpg" onerror="this.src='/res/img/common/banner/default.jpg'">
-          <h5 class="box-title"><small><b class="text-navy"> 로스트 킹덤</b></small></h5>
+          <img src="/res/img/common/banner/<?= $sSsn ?>.jpg" onerror="this.src='/res/img/common/banner/default.jpg'">
+          <h5 class="box-title"><small><b class="text-navy"> <?= $aAuthMenuList->{$aAuthMenuIdx[ $sSsn ]}->service_name ?></b></small></h5>
         </div>
         <div class="box-body">
           <ul class="sidebar sidebar-menu">
-            <li> <a href="/48/account"><p><small><b class="text-black">계정 조회</b></small></p></a> </li>
-            <li> <a href="/48/post"><p><small><b class="text-black">우편 발송</b></small></p></a> </li>
-            <li> <a href="/48/accessLog"><p><small><b class="text-black">GM 변경 로그</b></small></p></a> </li>
-            <li> <a href="/48/auth"><p><small><b class="text-black">GM 계정 관리</b></small></p></a> </li>
+<?php
+        foreach($aAuthMenuList->{$aAuthMenuIdx[ $sSsn ]}->menus as $sMenuIdx=>$oMenu)
+        {
+?>
+            <li>
+              <a href="<?= $oMenu->menu_url ?>"><p><small><b class="text-black"><?= $oMenu->menu_name ?></b></small></p></a>
+            </li>
+<?php
+        }
+?>
           </ul>
         </div>
       </div>
     </div>
+<?php 
+    $i++;
+  }}} 
+?>
   </section>
 
   <?php if($isDev){ ?>

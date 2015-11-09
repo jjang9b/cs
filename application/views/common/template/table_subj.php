@@ -5,6 +5,7 @@ if($aData)
     $aData = array($aData);
 ?>
 <div class="box-body">
+  <p><small><b class="text-danger"><?= $aTableInfo[ 'tableText' ] ?></b></small></p>
   <form name="f_edit">
   <div class="table-responsive">
   <table name="t_datatable" class="table table-bordered">
@@ -47,7 +48,7 @@ if($aData)
     {
 ?>
       <td name="tdSelect" data-primary_string="<?=$sColumn?>|<?=$sValue?>">
-        <h5><span class="text-navy"><?= $sValue ?></span></h5>
+        <h5><span class="text-black"><?= $sValue ?></span></h5>
 <?php
       if($aTableInfo[ 'editColumn' ][ $sColumn ])
       {

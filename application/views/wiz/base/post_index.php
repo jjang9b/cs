@@ -55,10 +55,17 @@ else
             <small><b>우편함 지급 유효일시</b></small>
             <input type="text" class="form-control" name="pPostExpireDt" value="<?= $sExpireDt?>" />
           </div>
-          <div class="form-group">
-            <small><b>발송 대상 유저 <span class="text-danger">(유저 고유번호)</span></b></small>&nbsp;
-            <small><b>1회 최대 유저 지급 제한수 : <span class="text-yellow"><?= $sMaxPostCount ?></span>명</b></small>
-            <textarea type="text" rows="5" class="form-control" name="pPostUser" placeholder="유저 다수 입력시 , (콤마) 로 구분"></textarea>
+          <div class="form-groupo">
+            <small><b>전체 유저 지급</b></small>
+            <div class="checkbox">
+              <label><input name="pPostIsAll" type="checkbox"> <b class="text-danger">전체 유저 발송</b></label>
+            </div>
+          </div>
+          <div name="d_post_user" class="form-group">
+            <small><b>발송 대상 유저 <span class="text-danger">(유저 계정 번호)</span></b></small>&nbsp;
+            <small><b>1회 최대 유저 지급 제한수 : <span class="text-yellow"><?= $sMaxPostCount ?></span>명</b></small><br />
+            <small><b class="text-danger">엔터 (Enter)</b> 로 대상 유저를 구분해서 입력해 주세요</small>&nbsp;
+            <textarea type="text" rows="5" class="form-control" name="pPostUser" placeholder="유저 다수 입력시 , (엔터) 로 구분"></textarea>
           </div>
         </div>
       </form>
@@ -73,13 +80,15 @@ else
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-      <h4 class="modal-title"><small>우편함 지급</small></h4>
+        <h4 class="modal-title"><small>우편함 지급</small>
+          <a href="javascript:void(0)" name="btn_modal_close" data-dismiss="modal" class="btn bg-white pull-right">닫기</a>
+        </h4>
       </div>
       <div class="modal-body">
-        <small><b class="text-navy"><span id="txtPostModal">우편 발송 중입니다.</span></b></small>
-      </div>
-      <div class="modal-footer">
-        <a href="javascript:void(0)" data-dismiss="modal" class="btn">Close</a>
+<div id="txtModalMsg">
+  <span id="txtPostModal" class="text-navy"><b>우편 발송 중입니다.</b></span>
+  <span class="text-red"><b> 완료되기 전까지 브라우저를 닫지 말아 주세요.</b></span>
+</div>
       </div>
     </div>
   </div>

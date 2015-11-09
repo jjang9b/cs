@@ -64,7 +64,7 @@ class WizBase_Controller extends Base_Controller
     $oDao = $this->dbkit->getInstance($sDSN);
 
     $aResult = $oDao->getTableList($sDSN);
-    $this->response_json($aResult);
+    $this->echoJson($aResult);
   }
 
   public function getColumnList()
@@ -75,7 +75,7 @@ class WizBase_Controller extends Base_Controller
     $this->load->model('dbkit');
     $oDao = $this->dbkit->getInstance($sDSN);
     $aResult = $oDao->getColumnList($sDSN, $sTableName);
-    $this->response_json($aResult);
+    $this->echoJson($aResult);
   }
 
   private function makeConfigMenu($aParam)

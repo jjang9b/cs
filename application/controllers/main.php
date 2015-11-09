@@ -8,24 +8,19 @@ class Main extends CsBase_Controller{
   {
     parent::__construct();
 
-    $this->aViewData['aMainSsnList'] = ftt_get_config('menu_ssn_list', 'cstool', false);
+    $this->aViewData['aMainSsnList'] = array(48);
   }
 
   public function index()
   {
-    if(!$this->oAuth->existsToken() || $this->getAllowType('', null) == 'login')
-      $this->layout_view('system/login', $this->aViewData);
-    else 
+    if($this->url[0])
     {
-      if($this->url[0])
-      {
-        $this->sDebugConsole = false;
-        $this->layout_view('/layout/default/game_main', $this->aViewData);
-      }
-      else
-      {
-        $this->layout_view('/layout/default/main', $this->aViewData);
-      }
+      $this->sDebugConsole = false;
+      $this->layout_view('/layout/default/game_main', $this->aViewData);
+    }
+    else
+    {
+      $this->layout_view('/layout/default/main', $this->aViewData);
     }
   }
 }

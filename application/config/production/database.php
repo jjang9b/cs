@@ -45,9 +45,11 @@
 | the active record class
 */
 
+$active_group = 'attendance';
 $active_record = FALSE;
 
 $db = array(
+
 );
 
 /* End of file database.php */

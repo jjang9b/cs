@@ -5,7 +5,7 @@
 </div>
 
 <?php 
-if($nTabDataCount > 0)
+if($aTabInfo)
 {
   $this->load->view('common/widget/util_buttons', array('table_type'=>'tab')); 
 ?>
@@ -35,12 +35,11 @@ if($nTabDataCount > 0)
         $i++;
       }
       ?>
+      </ul>
       <div class="tab-content">
         <div class="tab-pane active" id="tab_0"><?= $aTabResultView ?></div>
       </div>
     </div>
   </div>
 </div>
-<?php } else { ?>
-  <br /><p><small><b class="text-danger">&nbsp;&nbsp;데이터가 없습니다.</b></small></p>
 <?php } ?>

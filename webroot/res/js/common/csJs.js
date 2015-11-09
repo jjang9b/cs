@@ -3,6 +3,11 @@
 
 $(function(){
     
+  var config = {
+    postIntTime:200,
+    postGroupUserCount:20
+  };
+
   function cs( oPostErrMsg, oNonCheck ){
     this.sLocation = location.href;
     this.aLocationSplit = this.sLocation.split( '/' );
@@ -153,6 +158,7 @@ $(function(){
       }, 'json').fail(function( err, a, b ){
         alert( '에러가 발생했습니다.\n\n' + err.responseText );
 
+        oCallback( err.responseText, sActionName );
         _cs.func.log( 'error', err.responseText );
       });
 
@@ -191,7 +197,7 @@ $(function(){
       var sPostUrl = _arguments[0]        
         , oPostParamAdd = _arguments[1]
         , oPostUser = _arguments[2]
-        , oCallback = _arguments[3] || function(){}
+        , oCallback = _arguments[3] || { pending:function(){}, rejected:function(){}, fulfilled:function(){} } 
         , sActionName = _arguments[4] || null;
       
       _cs.func.setPostParam( oPostParamAdd );
@@ -208,30 +214,52 @@ $(function(){
         return false;
       }
 
-      window.sStartNum = 0;
+      window.nNowGroupNum = 0;
+      window.nSuccessNum = 0;
       window.csPostError = false;
       window.csPostTimeout = false;
       window.csPostStartTime = new Date();
 
+      /* 1. 그룹 단위로 보낼 유저 가공 */
+      var makeGroupUser = function(){
+        var sGroupPostUser = ''
+          , nStartNum = (window.nNowGroupNum == 0) ? 0 : (window.nNowGroupNum * config.postGroupUserCount)
+          , nEndNum = (window.nNowGroupNum == 0) ? config.postGroupUserCount : 
+            ((window.nNowGroupNum + 1) * config.postGroupUserCount);
+        
+        for(var e=nStartNum, r=nEndNum;e < r;e++){
+
+          if( aSplitUser[ e ] !== undefined )
+            sGroupPostUser += aSplitUser[ e ] + '|'; 
+        }
+
+        return sGroupPostUser.slice(0, -1);
+      };
+
+      /* 2. 우편 발송 */
       var doPost = function(sUserId){
         oPostParam.pPostUserId = sUserId;
 
         return $.post( sPostUrl, oPostParam, function( result ){
-          oCallback( result, sActionName );
-
-          if( result.result_code == 1 ){
-            var sCurUserNum = aSplitUser[ window.sStartNum ];
-            window.sStartNum++;
-            _cs.func.log( 'result 완료 건수 ' + window.sStartNum + ', 고객번호 ' + sCurUserNum, result );
+          if( result.code == 0 ){
+            window.nNowGroupNum = window.nNowGroupNum + 1;
+            _cs.func.log( 'result 완료 그룹 건수 : ' + window.nNowGroupNum + '건', result );
 
           } else {
             window.csPostError = true;
             _cs.func.log( 'result error', result );
           }
 
+          window.nSuccessNum = window.nSuccessNum + parseInt( result.success_num );
+
         }, 'json').then(function(){
-          if( (aSplitUser.length > window.sStartNum) && !window.csPostError && !window.csPostTimeout )
-            doPost( aSplitUser[ window.sStartNum ] );
+          if( (aSplitUser.length > window.nNowGroupNum * config.postGroupUserCount )
+            && !window.csPostError && !window.csPostTimeout ){
+
+            setTimeout(function(){
+              doPost( makeGroupUser() );
+            }, 200);
+          }
             
         }, 'json').fail(function(error){
           window.csPostError = true;
@@ -240,59 +268,109 @@ $(function(){
         }, 'json');
       }
 
-      doPost(aSplitUser[0]);
+      doPost( makeGroupUser() );
 
       (function(){
          var int_post = setInterval(function(){
             
           var csPostEndTime = new Date();
+          var nGoalUserCeil = Math.ceil( aSplitUser.length / config.postGroupUserCount );
+          var nSpendTime = (csPostEndTime.getTime() - window.csPostStartTime.getTime()) / Math.floor(1000);
 
-          if(window.sStartNum != aSplitUser.length)
+          this.showUserResult = function(){
+            var sSuccesList = ''
+              , sIncompleteList= ''
+              , nShowGroupNum = 0;
+
+            for( var a=0, b=((window.nNowGroupNum)*config.postGroupUserCount);a<b;a++){
+              if( aSplitUser[ a ] !== undefined ){
+
+                if( (a % config.postGroupUserCount) == 0 ){
+                  nShowGroupNum++;
+                  sSuccesList = sSuccesList.trim().slice(0, -1) + '<br /><br /><b>그룹 ' + nShowGroupNum + '</b> : ' + aSplitUser[ a ] + ', '; 
+                } else
+                  sSuccesList += aSplitUser[ a ] + ', '; 
+              }
+            }
+
+            $( '#txtPostModal' ).append( '<br /><br />' );
+            $( '#txtPostModal' ).append( '그룹 단위 발송 수 : <b class="text-navy">' + config.postGroupUserCount + '</b> 건' );
+            $( '#txtPostModal' ).append( '<br />' );
+            $( '#txtPostModal' ).append( '<br />소요 시간 : <b class="text-navy">' + nSpendTime + '</b> 초' );
+
+            if( sSuccesList != '' ){
+              $( '#txtPostModal' ).append( '<br /><br />' );
+              $( '#txtPostModal' ).append( '<b class="text-danger">성공 리스트</b>' );
+              $( '#txtPostModal' ).append( '<br />' );
+              $( '#txtPostModal' ).append( '<b class="text-red">완료 ' + window.nSuccessNum + '</b>건' );
+              $( '#txtPostModal' ).append( ', &nbsp;&nbsp;<b>대상 ' + aSplitUser.length + '</b>건' );
+              $( '#txtPostModal' ).append( sSuccesList.trim().slice(0, -1) );
+              $( '#txtPostModal' ).append( '<br /><br />' );
+              $( '#txtPostModal' ).append( '<b class="text-danger">미발송 리스트</b>' );
+              $( '#txtPostModal' ).append( '<br />' );
+
+              for(var q=(window.nNowGroupNum*config.postGroupUserCount), r=aSplitUser.length;q<=r;q++){
+                sIncompleteList += aSplitUser[ q ] + ', ';
+              }
+
+              $( '#txtPostModal' ).append( sIncompleteList );
+            }
+          };
+
+          if(window.nNowGroupNum != nGoalUserCeil)
           {
-            if( ((csPostEndTime.getTime() - window.csPostStartTime.getTime()) / Math.floor(1000)) > sPostTimeOutSecond ){
+            if( nSpendTime > sPostTimeOutSecond ){
               window.csPostTimeout = true;
 
-              $( '#txtPostModal' ).html( '<b class="text-red">' + window.sStartNum + '</b> 건 정상 완료, 고객번호 <b class="text-red">' 
-                + aSplitUser[ window.sStartNum ] + '</b>, <b class="text-red">' 
-                + sPostTimeOutSecond + '</b>초 응답시간 초과 발생하였습니다.' 
-                + '<br />서버쪽 이상이 있을수 있으므로 잠시 뒤 시도 후 개발팀으로 문의해 주세요.');
+              $( '#txtPostModal' ).html( '<i class="fa fa-warning" />&nbsp;<b class="text-red">응답 시간 초과 오류</b>' );
+              $( '#txtPostModal' ).append( '<br />' );
+              $( '#txtPostModal' ).append( 'Timeout 제한 값 : <b class="text-red">' + sPostTimeOutSecond + '</b> 초' );
+              $( '#txtPostModal' ).append( '<br />' );
+              $( '#txtPostModal' ).append( '서버쪽 이상이 있을수 있으므로 잠시 뒤 시도 후 개발팀으로 문의해 주세요.' );
                 
+              this.showUserResult();
 
               $( 'button[name=btn_post]' ).attr( 'disabled', false );
-              $( 'button[name=btn_post]' ).attr( 'class', 'btn btn-primary' );
+              $( 'button[name=btn_post]' ).attr( 'class', 'btn bg-white' );
 
               $( '#postWaitModal' ).modal();
               clearInterval(int_post);
 
             } else if( window.csPostError ) {
-              $( '#txtPostModal' ).html( '총 <b class="text-red">' + aSplitUser.length 
-                + '</b>건 중 <b class="text-red">' + window.sStartNum + '</b> 건 처리 완료, 고객번호 <b class="text-red">' 
-                + aSplitUser[ window.sStartNum ]+ '</b> 건 에서 지급 오류 발생하였습니다.'
-                + '<br />해당 고객번호건 재시도 후 오류시 F12 콘솔 오류 값을 통해 개발팀으로 문의해 주세요.');
+              $( '#txtPostModal' ).html( '<i class="fa fa-warning" />&nbsp;<b class="text-red">에러 발생</b>' );
+
+              this.showUserResult();
+              oCallback.rejected();
 
               $( 'button[name=btn_post]' ).attr( 'disabled', false );
-              $( 'button[name=btn_post]' ).attr( 'class', 'btn btn-primary' );
+              $( 'button[name=btn_post]' ).attr( 'class', 'btn bg-white' );
 
               $( '#postWaitModal' ).modal();
               clearInterval(int_post);
 
             } else {
-              $( '#txtPostModal' ).html( '총 <b class="text-red">' + aSplitUser.length + '</b>건 중 <b class="text-red">' 
-                + window.sStartNum + '</b> 건, 고객번호 <b class="text-red">' + aSplitUser[ window.sStartNum ] + '</b> 처리 중' );
+              $( '#txtPostModal' ).html( '총 그룹 <b class="text-red">' + nGoalUserCeil + '</b>건 중' );
+              $( '#txtPostModal' ).append( '그룹 <b class="text-red">' + window.nNowGroupNum + '</b> 처리 중' );
+              $( '#txtPostModal' ).append( ', 대상 <b class="text-red">' + aSplitUser.length + '</b>건' );
+
+              oCallback.pending();
 
               $( 'button[name=btn_post]' ).attr( 'disabled', true );
               $( 'button[name=btn_post]' ).attr( 'class', 'btn btn-muted' );
               $( '#postWaitModal' ).modal();
             }
-          } 
+          }
           else 
           {
+            $( '#txtPostModal' ).html( '<i class="fa fa-check-circle" />&nbsp;<b class="text-navy">정상 완료</b>' );
 
-            $( '#txtPostModal' ).html( '총<b class="text-red"> ' +window.sStartNum + '</b> 건 정상 처리 완료 하였습니다.' );
+            this.showUserResult();
+            oCallback.fulfilled();
+
             $( '#postWaitModal' ).modal();
 
             $( 'button[name=btn_post]' ).attr( 'disabled', false );
-            $( 'button[name=btn_post]' ).attr( 'class', 'btn btn-primary' );
+            $( 'button[name=btn_post]' ).attr( 'class', 'btn bg-white' );
 
             clearInterval(int_post);
           }
@@ -307,10 +385,8 @@ $(function(){
 });
 
 $(function(){
-
-  var sTableName = null
-  , sSearchValue = $( '#f_search input[name=pSearchValue]' ).eq( 0 ).val()
-  , sSearchDate = $( '#f_search input[name=pSearchDate]' ).eq( 0 ).val();
+  var cs = window.cs || null;
+  var _sCookieId = 'cstool_session_qwerty_123_id';
 
   var uSearch = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/search' 
   , uBeforeSearch = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/beforeSearch'
@@ -320,12 +396,15 @@ $(function(){
   , uEditValue = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/submitEditValue'
   , uPrimaryList = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/ajaxPrimaryList'
   , uTabLogSearch = '/' + cs.aLocationSplit[ 3 ] + '/log/search'
-  , uTabSelect = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/tabSelect';
+  , uTabSelect = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/tabSelect'
+  , uGoLogin = '/main/goLogin';
+
+  var sTableName = null
+  , sSearchValue = $( '#f_search input[name=pSearchValue]' ).eq( 0 ).val()
+  , sSearchDate = $( '#f_search input[name=pSearchDate]' ).eq( 0 ).val();
 
   var func = {
     onloadGameJS : function(){
-      var cs = cs || null;
-
       if( cs == null )
         $.getScript( '/res/js/wiz/game.js' ); 
       else {
@@ -335,7 +414,7 @@ $(function(){
     },
     onloadResize : function(){
       var height = $(window).height() - $( 'body > .header' ).height() - ($( 'body > .footer' ).outerHeight() || 0);
-      height = parseInt(height)-83;
+      height = parseInt(height)-50;
       $( '.wrapper' ).css( 'min-height', height + 'px' );
 
       var content = $( '.wrapper').height();
@@ -346,6 +425,8 @@ $(function(){
       }
     },
     onloadEvent : function(){
+      $.cookie.json = true;
+
       var sDebugConsole = $( '#sDebugConsole' ).val();
 
       if(!cs.aLocationSplit[ 3 ]){
@@ -358,8 +439,12 @@ $(function(){
 
       func.setSearchDefaultType();
 
-      if( $( '#t_datatable' ).length > 0 ){
-        var table = $( '#t_datatable' ).DataTable();
+      if( $( 'table[name=t_datatable]' ).length > 0 ){
+        var table = $( 'table[name=t_datatable]' ).DataTable({
+          'pageLength':5,
+          'bFilter':false,    
+          'bLengthChange':false,    
+        });
         table.order([0, 'desc']).draw();
       }
 
@@ -382,8 +467,22 @@ $(function(){
       if( sDebugConsole == 1 )
         cs.func.getDebug();
 
-    },
-    setSearchDefaultType : function(){
+      func.setCheckLogin();
+
+    /* 로그인 체크 */
+    }, setCheckLogin : function(){
+      var oLoginInfo = $.cookie( _sCookieId );
+
+      if( oLoginInfo !== null && oLoginInfo !== undefined ){
+        $( '#b_login_userid' ).html( oLoginInfo.auth_id );
+        $( '#d_login_success' ).show();
+        $( '#d_login_fail' ).hide();
+      } else {
+        $( '#d_login_success' ).hide();
+        $( '#d_login_fail' ).show();
+      }
+                    
+    }, setSearchDefaultType : function(){
                        
       $( '#uSearchType li' ).each( function( k, v ){ 
 
@@ -406,7 +505,7 @@ $(function(){
 
          if( $( '#iIsListAccount' ).val() && _tableType == 'main' ){
          
-           $( 'table[name=t_listaccount]' ).children( 'tbody' ).children( 'tr' ).children( '[name=tdSelect]' ).each( function( k, v ){
+           $( 'table[name=t_listaccount]:first' ).children( 'tbody' ).children( 'tr' ).children( '[name=tdSelect]' ).each( function( k, v ){
 
              var rData = v.dataset.primary_string.split( '|' );
 
@@ -529,8 +628,12 @@ $(function(){
 
       });
 
-      if( $( '#t_datatable' ).length > 0 ){
-        var table = $( '#t_datatable' ).DataTable();
+      if( $( 'table[name=t_datatable]' ).length > 0 ){
+        var table = $( 'table[name=t_datatable]' ).DataTable({
+          'pageLength':5,
+          'bFilter':false,    
+          'bLengthChange':false,    
+        });
         table.order([0, 'desc']).draw();
       }
 
@@ -545,6 +648,48 @@ $(function(){
       
   });
 
+  $( '#pGmPassword' ).keypress(function( e ){ if( e.which == 13 ) $( 'button[name=btn_login]' ).click(); });
+
+  $( 'button[name=btn_login]' ).click( function(){
+    var pGmId = $( '#pGmId' ).eq(0)
+      , pGmPassword = $( '#pGmPassword' ).eq(0);
+
+    if( pGmId.val() == ''){
+      alert( '사용자 아이디를 입력해 주세요.' );
+      pGmId.focus();
+      return false;
+
+    } else if( pGmPassword.val() == '' ) {
+      alert( '사용자 비밀 번호를 입력해 주세요.' );
+      pGmPassword.focus();
+      return false;
+    }
+
+    $.post( uGoLogin, {pGmId:pGmId.val(), pGmPassword:pGmPassword.val()}, function( ret ){
+      if( ret == '' ){
+        alert( '존재하지 않는 계정이거나 비밀번호를 잘못 입력하였습니다.' );
+        pGmId.focus();
+        return false;
+      }
+
+      $.cookie( _sCookieId, ret, {expires:7, path:'/'} );
+      location.reload();
+
+    }, 'json').fail(function( err, a, b ){
+      alert( '에러가 발생했습니다.\n\n' + err.responseText );
+
+      cs.func.log( 'error', err.responseText );
+    });
+  });
+
+  $( 'button[name=btn_logout]' ).click( function(){
+    $.cookie( _sCookieId, null, {path:'/'});
+    $( '#pGmId' ).val( '' );
+    $( '#pGmPassword' ).val( '' );
+
+    location.reload();
+  });
+
   $( 'button[name=btn_before_search]' ).click( function(){ 
 
     var sUsn = $( this ).data( 'usn' ) || $( '#f_search input[name=pSearchValue]' ).val();
@@ -553,6 +698,7 @@ $(function(){
     $( '#f_search' ).attr( 'action', uSearch );
 
     $( '#f_search input[name=pSearchValue]' ).val( sUsn );  
+    $( '#f_search input[name=pSearchType]' ).val( 1 ); // 유저 고유 번호  
 
     $( '#f_search' ).submit();
 

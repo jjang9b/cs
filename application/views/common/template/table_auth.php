@@ -10,6 +10,7 @@ if($aData)
   <table name="t_datatable" class="table table-bordered">
     <thead>
     <tr>
+      <th class="bg-navy"></th>
 <?php
   foreach($aData as $aDataResult)
   {
@@ -42,12 +43,13 @@ if($aData)
     $i++;
 ?>
     <tr>
+      <td><a name="btn_auth_edit" class="btn bg-navy">권한 및 정보수정</a></td>
 <?php 
     foreach($aDataResult as $sColumn=>$sValue )
     {
 ?>
       <td name="tdSelect" data-primary_string="<?=$sColumn?>|<?=$sValue?>">
-        <h5><span class="text-navy"><?= $sValue ?></span></h5>
+        <h5><span class="text-black"><?= $sValue ?></span></h5>
 <?php
       if($aTableInfo[ 'editColumn' ][ $sColumn ])
       {

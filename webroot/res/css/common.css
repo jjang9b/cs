@@ -1,6 +1,7 @@
 #d_order .form-group input{ width:300px; }
 #t_datatable th, #t_datatable td{ word-wrap:break-word;min-width:30px;max-width:150px; }
 
+.wrapper{ clear:both !important;}
 .content{ margin:0 0 0 0.5em; }
 .i_game_logo{background-color:#001f3f; width:100%;}
 .treeview a{ color:#666 !important; }
@@ -18,3 +19,11 @@
 .nav-tabs-custom > .nav-tabs > li a{ color: #aaa !important; }
 .nav-tabs-custom > .nav-tabs > li.active a{ color: black !important; }
 .nav-tabs-custom > .nav-tabs > li.active { border-top-color: #4C4C4C !important; }
+
+.pagination .active a,.pagination .active a:hover, .pagination .active a:focus
+{background-color:#555 !important;border-color:#ddd !important;color:white;}
+
+.cs_login{margin:0.7em 0 0 1em;}
+.cs_login_af{margin:0.4em 0 0 1em;}
+.cs_login .passwd{margin:0em 0 0 -1.7em;}
+.cs_login button{margin:0em 0 0 -0.5em;}

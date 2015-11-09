@@ -1,10 +1,12 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 
-if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
-{
+if ($_SERVER['HTTP_X_CLIENT_IP'])
+  $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_X_CLIENT_IP'];
+else if ($_SERVER['HTTP_X_CLIENTIP'])
+  $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_X_CLIENTIP'];
+else if ($_SERVER['HTTP_X_FORWARDED_FOR'])
   $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
-}
 
 /**
  * CodeIgniter

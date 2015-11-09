@@ -13,6 +13,7 @@
           <li> <a href="/wiz/post"><small><b>우편함 지급/조회 생성</b></small></a> </li>
           <li> <a href="/wiz/restrict"><small><b>유저 제재 및 해제/조회 생성</b></small></a></li>
           <li> <a href="/wiz/accessLog"><small><b>GM 변동 이력 조회 생성</b></small></a> </li>
+          <li> <a href="/wiz/auth"><small><b>GM 계정 관리 생성</b></small></a> </li>
           <li> <a href="/wiz/custome"><small><b>Custome 생성</b></small></a> </li>
         </ul>
       </li>
