@@ -6,10 +6,6 @@ if($aMenuList){
     <ul class="sidebar-menu">
 
       <li class="treeview active">
-        <a href="javascript:void(0)">
-          <span><b>Menu</b></span>
-          <i class="fa pull-right fa-angle-down"></i>
-        </a>
         <ul class="treeview-menu">
           <li><img class="i_game_logo" src="/res/img/common/banner/<?= $url[0] ?>.jpg" 
             onerror="this.src='/res/img/common/banner/default.jpg'" /></li>

@@ -158,7 +158,6 @@ $(function(){
       }, 'json').fail(function( err, a, b ){
         alert( '에러가 발생했습니다.\n\n' + err.responseText );
 
-        oCallback( err.responseText, sActionName );
         _cs.func.log( 'error', err.responseText );
       });
 
@@ -191,8 +190,8 @@ $(function(){
     }, runMultiPost : function(){
 
       var _arguments = arguments[0];
-      var sMaxPostCount = $( '#i_sMaxPostCount' ).val()
-        , sPostTimeOutSecond = $( '#i_sPostTimeOutSecond' ).val();
+      var sMaxPostCount = $( '#i_maxPostCount' ).val()
+        , sPostTimeOutSecond = $( '#i_postTimeOutSecond' ).val();
 
       var sPostUrl = _arguments[0]        
         , oPostParamAdd = _arguments[1]
@@ -423,11 +422,25 @@ $(function(){
       else {
         $( '.left-side, html, body' ).css( 'min-height', height + 'px' );
       }
+
+      if( $( 'table[name=t_datatable' ).length > 0 ){
+        var rightWidth = $( '.content' ).width();
+
+        $( 'table[name=t_datatable' ).each(function(){
+          var _this = $( this );
+          var colCount = $( _this ).find( 'th' ).length
+            , tabWidth = Math.round( rightWidth / colCount ) - (1 * colCount);
+
+          $( _this ).find( 'th, td' ).css( 'width', tabWidth + 10 );
+          $( _this ).find( 'th, td' ).css( 'max-width', tabWidth + 10 );
+        });
+      }
     },
     onloadEvent : function(){
+      $.cookie = $.cookie || function(){};
       $.cookie.json = true;
 
-      var sDebugConsole = $( '#sDebugConsole' ).val();
+      var bDebugConsole = $( '#bDebugConsole' ).val();
 
       if(!cs.aLocationSplit[ 3 ]){
         $( '[data-toggle="offcanvas"]' ).click();
@@ -441,9 +454,10 @@ $(function(){
 
       if( $( 'table[name=t_datatable]' ).length > 0 ){
         var table = $( 'table[name=t_datatable]' ).DataTable({
-          'pageLength':5,
-          'bFilter':false,    
-          'bLengthChange':false,    
+          'pageLength':7,
+          'bSort':false,
+          'bFilter':false,
+          'bLengthChange':false,
         });
         table.order([0, 'desc']).draw();
       }
@@ -464,7 +478,7 @@ $(function(){
           $( 'button[name=btn_search]' ).click();
       });
 
-      if( sDebugConsole == 1 )
+      if( bDebugConsole == 1 )
         cs.func.getDebug();
 
       func.setCheckLogin();
@@ -505,7 +519,7 @@ $(function(){
 
          if( $( '#iIsListAccount' ).val() && _tableType == 'main' ){
          
-           $( 'table[name=t_listaccount]:first' ).children( 'tbody' ).children( 'tr' ).children( '[name=tdSelect]' ).each( function( k, v ){
+           $( _t ).closest( 'table[name=t_listaccount]' ).children( 'tbody' ).children( 'tr' ).children( '[name=tdSelect]' ).each( function( k, v ){
 
              var rData = v.dataset.primary_string.split( '|' );
 
@@ -630,8 +644,9 @@ $(function(){
 
       if( $( 'table[name=t_datatable]' ).length > 0 ){
         var table = $( 'table[name=t_datatable]' ).DataTable({
-          'pageLength':5,
-          'bFilter':false,    
+          'pageLength':7,
+          'bSort':false,
+          'bFilter':false,
           'bLengthChange':false,    
         });
         table.order([0, 'desc']).draw();
@@ -691,13 +706,12 @@ $(function(){
   });
 
   $( 'button[name=btn_before_search]' ).click( function(){ 
-
-    var sUsn = $( this ).data( 'usn' ) || $( '#f_search input[name=pSearchValue]' ).val();
+    var sSearchValue = $( this ).data( 'searchvalue' ) || $( '#f_search input[name=pSearchValue]' ).val();
 
     $( '#f_search' ).attr( 'method', 'post' );
     $( '#f_search' ).attr( 'action', uSearch );
 
-    $( '#f_search input[name=pSearchValue]' ).val( sUsn );  
+    $( '#f_search input[name=pSearchValue]' ).val( sSearchValue );
     $( '#f_search input[name=pSearchType]' ).val( 1 ); // 유저 고유 번호  
 
     $( '#f_search' ).submit();

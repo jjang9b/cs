@@ -6,7 +6,6 @@ $(function(){
   var uPrimaryList = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/ajaxPrimaryList';
   var uPostPoint = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postPoint'
     , uPostUserInfo = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postUserInfo'
-    , uPostUserState = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postUserState'
     , uPostOrder = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postOrder'
     , uSubmitPost = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/submitPost'
     , uPostRestrict = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postRestrict'
@@ -14,8 +13,8 @@ $(function(){
     , uPostAuthGetAccount = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postAuthGetAccount'
     , uPostAuthChange = '/' + cs.aLocationSplit[ 3 ] + '/' + cs.aLocationSplit[ 4 ] + '/postAuthChange';
 
-  var sMaxPostCount = $( '#i_sMaxPostCount' ).val()
-    , sPostTimeOutSecond = $( '#i_sPostTimeOutSecond' ).val();
+  var sMaxPostCount = $( '#i_maxPostCount' ).val()
+    , sPostTimeOutSecond = $( '#i_postTimeOutSecond' ).val();
 
   this.onVisibleInit = function(){
     if( $( 'select[name=pInfoType]' ).length > 0 ){
@@ -41,6 +40,7 @@ $(function(){
         });
       });
     }
+    $( 'a[name^=a_conts_tab]' ).attr( 'href', 'javascript:void(0)' );
   };
 
   this.onAutoParamInit = function(){
@@ -81,23 +81,19 @@ $(function(){
 
   var oCallback = function( result, sActionName ){
     if( result.code == 0 ){
-      var nSearchIdx = null;
+      cs.func.setPostParam();
+      var nSearchIdx = window.cs.oPostParam.pSearchValue;
 
       switch( sActionName ){
-        case 'ac_userinfo' : 
-          alert( '정상 유저 정보 수정 되었습니다.' );
-          nSearchIdx = window.cs.oPostParam.pInfoAccountIdx;
-         break;
-        case 'ac_userstate' : 
-          alert( '정상 유저 상태 변경 되었습니다.' );
-          nSearchIdx = window.cs.oPostParam.pStateAccountIdx;
+        case 'ac_useraction' : 
+          alert( '정상 유저 액션 실행 되었습니다.' );
          break;
         case 'ac_order' : 
           alert( '정상 주문 등록/복구 되었습니다.' );
           nSearchIdx = window.cs.oPostParam.pOrderAccountIdx;
          break;
-        case 'ac_restrict' : 
-          alert( '정상 유저 제재/해제 되었습니다.' );
+        case 'ac_recall' : 
+          alert( '정상 회수 되었습니다.' );
          break;
         case 'ac_auth' : 
           alert( '정상 계정 생성 되었습니다.' );
@@ -115,27 +111,17 @@ $(function(){
       else
         location.reload();
     } else {
+      var sErr = '';
 
-      alert( '오류가 발생 하였습니다.\n' + result );
+      if( typeof result == 'object' )
+        for( var e in result ) sErr += e + " : " + result[ e ] + ", ";
+      else
+        sErr = result;
+
+      alert( '오류가 발생 하였습니다.\n' + sErr );
       cs.func.log( 'error', result );
     }
   }
-
-  $( 'button[name=btn_userinfo]' ).click( function(){ 
-    cs.func.setPostParam();
-
-    if( window.cs.oPostParam.pInfoValue == window.cs.oPostParam.pInfoNow ) {
-      alert( '현재와 다른 값을 입력해 주세요.' );
-      $( 'input[name=pInfoValue]' ).eq(0).focus();
-      return false;
-    }
-
-    cs.func.doPost( uPostUserInfo, {}, oCallback, 'ac_userinfo', 'frm_userinfo');
-  });
-
-  $( 'button[name=btn_userstate]' ).click( function(){ 
-    cs.func.doPost( uPostUserState, {}, oCallback, 'ac_userstate', 'frm_userstate');
-  });
 
   $( 'button[name=btn_order]' ).click( function(){ 
     cs.func.doPost( uPostOrder, {}, oCallback, 'ac_order');
@@ -144,7 +130,7 @@ $(function(){
   $( 'button[name=btn_post]' ).click( function(){ 
     var pPostUser = $( 'textarea[name=pPostUser]' ).val();
     var aSplitUser = pPostUser.split( '\n' );
-    var sMaxPostCount = $( '#i_sMaxPostCount' ).val();
+    var sMaxPostCount = $( '#i_maxPostCount' ).val();
 
     if( aSplitUser.length > sMaxPostCount ){
       alert( sMaxPostCount + '건 이상 한 번에 처리할 수 없습니다.\n현재 개수 : ' + aSplitUser.length );
@@ -192,7 +178,6 @@ $(function(){
   });
 
   $( ':checkbox[name=pPostIsAll]' ).on( 'ifChanged', function(){ 
-
     if( $(this).prop( 'checked' ) )
       $( 'div[name=d_post_user]' ).hide();
     else
@@ -209,7 +194,7 @@ $(function(){
 
     $.getJSON( uPrimaryList, {pDsn:_db, pTableName:_table}, function( res ){
 
-      $( _t ).parents().parents( 'tr' ).children( 'td' ).each( function( k, v ){
+      $( _t ).closest( 'tr' ).children( 'td' ).each( function( k, v ){
         if( v.dataset.primary_string !== undefined ){
           var aSplit =  v.dataset.primary_string.split( '|' );
           var aSplitMenu = '';
@@ -263,6 +248,18 @@ $(function(){
 
   $( 'a[name=btn_auth_change]' ).click(function(){
     cs.func.doPost( uPostAuthChange, {}, oCallback, 'ac_default', 'frm_auth_change');
+  });
+
+  $( 'a[name=a_conts_tab]' ).click(function(){
+    var nClickType = $( this ).data( 'type' );
+
+    $( 'div[name=d_conts]' ).each(function(){
+      if( nClickType == $( this ).data( 'type' )) {
+        $( this ).show();
+      } else {
+        $( this ).hide();
+      }
+    });
   });
 
   this.onVisibleInit();
